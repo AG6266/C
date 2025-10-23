@@ -1,0 +1,73 @@
+Q1.....
+
+#include <stdio.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <time.h>
+
+int main(int argc, char *argv[]) {
+    struct stat fileStat;
+
+    if (argc < 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+
+    if (stat(argv[1], &fileStat) == -1) {
+        perror("stat");
+        return 1;
+    }
+
+    printf("File: %s\n", argv[1]);
+    printf("Inode Number: %ld\n", fileStat.st_ino);
+    printf("Number of Hard Links: %ld\n", fileStat.st_nlink);
+    printf("File Size: %ld bytes\n", fileStat.st_size);
+
+    printf("Permissions: ");
+    printf((fileStat.st_mode & S_IRUSR) ? "r" : "-");
+    printf((fileStat.st_mode & S_IWUSR) ? "w" : "-");
+    printf((fileStat.st_mode & S_IXUSR) ? "x" : "-");
+    printf((fileStat.st_mode & S_IRGRP) ? "r" : "-");
+    printf((fileStat.st_mode & S_IWGRP) ? "w" : "-");
+    printf((fileStat.st_mode & S_IXGRP) ? "x" : "-");
+    printf((fileStat.st_mode & S_IROTH) ? "r" : "-");
+    printf((fileStat.st_mode & S_IWOTH) ? "w" : "-");
+    printf((fileStat.st_mode & S_IXOTH) ? "x" : "-");
+    printf("\n");
+
+    printf("Last Access Time: %s", ctime(&fileStat.st_atime));
+    printf("Last Modification Time: %s", ctime(&fileStat.st_mtime));
+
+    return 0;
+}
+
+Q2.......
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int count = 0;
+
+void handle_sigint(int sig) {
+    count++;
+    if (count == 1) {
+        printf("\nCaught Ctrl+C (SIGINT)! Press Ctrl+C again to exit.\n");
+    } else {
+        printf("\nExiting program... Goodbye!\n");
+        exit(0);
+    }
+}
+
+int main() {
+    signal(SIGINT, handle_sigint);
+
+    printf("Program running... Press Ctrl+C to test.\n");
+
+    while (1) {
+        pause(); // Wait for signal
+    }
+
+    return 0;
+}
+

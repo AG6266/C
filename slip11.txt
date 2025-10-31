@@ -1,0 +1,56 @@
+slip11
+
+Q.1) Write a C program to get and set the resource limits such as files, memory
+associ ated with a process
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+
+int main() {
+    struct rlimit limit;
+
+    // Get current file size limit
+    getrlimit(RLIMIT_FSIZE, &limit);
+    printf("Current file size limit: %ld\n", limit.rlim_cur);
+    printf("Maximum file size limit: %ld\n", limit.rlim_max);
+
+    // Set new file size limit
+    limit.rlim_cur = 1024 * 1024; // 1 MB
+    setrlimit(RLIMIT_FSIZE, &limit);
+    printf("New file size limit set to 1 MB\n");
+
+    // Get current memory limit
+    getrlimit(RLIMIT_AS, &limit);
+    printf("Current memory limit: %ld\n", limit.rlim_cur);
+    printf("Maximum memory limit: %ld\n", limit.rlim_max);
+
+    return 0;
+}
+
+
+
+
+
+Q.2) Write a C program that redirects standard output to a file output.txt. (use of dup
+and open system call
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int main() {
+    int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+        perror("open");
+        return 1;
+    }
+
+    dup2(fd, STDOUT_FILENO);
+    close(fd);
+
+    printf("This output is redirected to output.txt\n");
+
+    return 0;
+}

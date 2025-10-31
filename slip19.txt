@@ -1,0 +1,94 @@
+slip19
+
+Q.1) Take multiple files as Command Line Arguments and print their file type and inode
+number(SLIP 1)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <file1> <file2> ...\n", argv[0]);
+        return 1;
+    }
+
+    struct stat fileStat;
+
+    for (int i = 1; i < argc; i++) {
+        if (stat(argv[i], &fileStat) == -1) {
+            perror(argv[i]);
+            continue;
+        }
+
+        printf("File: %s\n", argv[i]);
+        printf("Inode: %ld\n", fileStat.st_ino);
+        printf("Type: ");
+
+        if (S_ISREG(fileStat.st_mode))      printf("Regular file\n");
+        else if (S_ISDIR(fileStat.st_mode)) printf("Directory\n");
+        else if (S_ISCHR(fileStat.st_mode)) printf("Character device\n");
+        else if (S_ISBLK(fileStat.st_mode)) printf("Block device\n");
+        else if (S_ISFIFO(fileStat.st_mode))printf("FIFO or pipe\n");
+        else if (S_ISLNK(fileStat.st_mode)) printf("Symbolic link\n");
+        else if (S_ISSOCK(fileStat.st_mode))printf("Socket\n");
+        else                                printf("Unknown\n");
+
+        printf("\n");
+    }
+
+    return 0;
+}
+
+Q.2) Implement the following unix/linux command (use fork, pipe and exec system call)
+ls
+l | wc 1(SLIP 7,8,19)
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+int main() {
+    int fd[2];
+    pid_t pid1, pid2;
+
+    // Block Ctrl+C (SIGINT) and Ctrl+\ (SIGQUIT)
+    signal(SIGINT, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+
+    if (pipe(fd) == -1) {
+        perror("pipe");
+        exit(1);
+    }
+
+    pid1 = fork();
+    if (pid1 == 0) {
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[0]);
+        close(fd[1]);
+        execlp("ls", "ls", "-l", NULL);
+        perror("execlp ls");
+        exit(1);
+    }
+
+    pid2 = fork();
+    if (pid2 == 0) {
+        dup2(fd[0], STDIN_FILENO);
+        close(fd[1]);
+        close(fd[0]);
+        execlp("wc", "wc", "-l", NULL);
+        perror("execlp wc");
+        exit(1);
+    }
+
+    close(fd[0]);
+    close(fd[1]);
+
+    wait(NULL);
+    wait(NULL);
+
+    return 0;
+}

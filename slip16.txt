@@ -1,0 +1,93 @@
+slip16
+
+Q.1) Display all the files from current directory which are created in particular
+month(SLIP 6)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
+
+int main() {
+    DIR *dir;
+    struct dirent *entry;
+    struct stat fileStat;
+    int target_month;
+
+    printf("Enter month number (1-12): ");
+    scanf("%d", &target_month);
+
+    dir = opendir(".");
+    if (dir == NULL) {
+        perror("opendir");
+        return 1;
+    }
+
+    printf("Files created in month %d:\n", target_month);
+    while ((entry = readdir(dir)) != NULL) {
+        if (stat(entry->d_name, &fileStat) == 0 && S_ISREG(fileStat.st_mode)) {
+            struct tm *timeinfo = localtime(&fileStat.st_ctime);
+            if (timeinfo->tm_mon + 1 == target_month) {
+                printf("%s\n", entry->d_name);
+            }
+        }
+    }
+
+    closedir(dir);
+    return 0;
+}
+Q.2) Write a C program which create a child process which catch a signal sighup, sigint
+and sigquit. The Pa rent process send a sighup or sigint signal after every 3 seconds, at
+the end of 30 second parent send sigquit signal to child and child terminates my
+displaying message My DADDY has
+Killed me!!!
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+void handle_sighup(int sig) {
+    printf("Child received SIGHUP\n");
+}
+
+void handle_sigint(int sig) {
+    printf("Child received SIGINT\n");
+}
+
+void handle_sigquit(int sig) {
+    printf("My DADDY has Killed me!!!\n");
+    exit(0);
+}
+
+int main() {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        signal(SIGHUP, handle_sighup);
+        signal(SIGINT, handle_sigint);
+        signal(SIGQUIT, handle_sigquit);
+
+        while (1) {
+            sleep(1);
+        }
+    } else if (pid > 0) {
+        for (int i = 0; i < 10; i++) {
+            sleep(3);
+            if (i % 2 == 0)
+                kill(pid, SIGHUP);
+            else
+                kill(pid, SIGINT);
+        }
+
+        kill(pid, SIGQUIT);
+        wait(NULL);
+    } else {
+        perror("fork");
+        return 1;
+    }
+
+    return 0;
+}
+
